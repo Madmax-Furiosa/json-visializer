@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import ELK from "elkjs/lib/elk.bundled.js";
 import React, { useCallback, useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
 import {
   Background,
   ReactFlow,
@@ -16,8 +17,7 @@ import {
 
 import "@xyflow/react/dist/style.css";
 import RotatingText from "./TextRotate";
-import { Search } from "lucide-react";
-// import { initialEdges, initialNodes } from "./InitialNodes";
+import { Search, SendHorizontal } from "lucide-react";
 
 const elk = new ELK();
 const elkOptions = {
@@ -134,10 +134,11 @@ const generateNodesAndEdges = (data, parentId = null, label = "data") => {
 function LayoutFlow() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-
-  const { fitView } = useReactFlow();
+  const { fitView, setCenter } = useReactFlow();
   const [jsonInput, setJsonInput] = useState("");
   const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  // const [message, setMessage] = useState("");
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
@@ -203,15 +204,55 @@ function LayoutFlow() {
     age: 30,
     active: true,
     address: {
-      street: "123 Main St",
+      landmark: "123 Main St",
       city: "Bengaluru",
-      zipcode: "560001",
+      pincode: "560001",
     },
   };
 
   const loadSample = () => {
     setJsonInput(JSON.stringify(sampleJson, null, 2));
     setError("");
+  };
+
+  const notify = () => toast("No match found");
+
+  const handleSearch = () => {
+    if (!searchTerm) return;
+
+    let foundNode = nodes.find(
+      (n) =>
+        n.data.label.toLowerCase() === searchTerm.split(".").pop().toLowerCase()
+    );
+
+    if (foundNode) {
+      // Highlight node
+      const updated = nodes.map((n) =>
+        n.id === foundNode.id
+          ? {
+              ...n,
+              style: {
+                ...n.style,
+                border: "3px solid #FFD700",
+                boxShadow: "0 0 10px #FFD700",
+              },
+            }
+          : {
+              ...n,
+              style: {
+                ...n.style,
+                border: "1px solid #3B82F6",
+                boxShadow: "none",
+              },
+            }
+      );
+
+      setNodes(updated);
+      setCenter(foundNode.position.x, foundNode.position.y, { zoom: 1.5 });
+      // setMessage("Match found!");
+    } else {
+      notify();
+    }
   };
 
   return (
@@ -235,15 +276,27 @@ function LayoutFlow() {
             rotationInterval={3000}
           />
         </div>
-        <input
-          type="search"
-          placeholder="Search JSON"
-          className="w-1/4 bg-white border border-gray-200 rounded-full py-2 px-3 relative"
-        />
-        <div className="absolute right-8" onClick={() => console.log("search")}>
-          <Search className="hover:text-gray-800 cursor-pointer" size={26} />
+        <div className="relative flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Search JSON path (e.g., user.address)"
+            value={searchTerm}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSearch();
+              }
+            }}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-80 bg-white border border-gray-200 rounded-full py-2 px-4 text-black placeholder:text-gray-400 placeholder:text-sm"
+          />
+          <SendHorizontal
+            onClick={handleSearch}
+            className="absolute right-3 text-gray-700 hover:text-black cursor-pointer"
+            size={22}
+          />
         </div>
       </div>
+
       <div className="flex flex-col md:flex-row gap-5 bg-gray-50 h-screen">
         {/* Left panel */}
         <div className="w-full md:w-1/2 border-r border-gray-200 bg-white flex flex-col">
@@ -264,7 +317,7 @@ function LayoutFlow() {
               value={jsonInput}
               onChange={(e) => setJsonInput(e.target.value)}
               placeholder='{"id": "1", "name": "APIWIZ", "values": [1,2,3]}'
-              className=" p-3 border border-black rounded font-mono text-sm md:resize-none focus:outline-none h-72"
+              className="p-3 border border-black rounded font-mono text-sm md:resize-none focus:outline-none h-72 md:h-96"
             />
 
             {error && (
@@ -304,6 +357,7 @@ function LayoutFlow() {
           </ReactFlow>
         </div>
       </div>
+      <ToastContainer theme="light" position="top-center" autoClose={5000} />
     </section>
   );
 }
