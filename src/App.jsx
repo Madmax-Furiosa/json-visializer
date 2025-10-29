@@ -3,7 +3,9 @@ import LayoutFlow from "./components/Flow";
 function App() {
   return (
     <>
-      <LayoutFlow />
+      <ReactFlowProvider>
+        <LayoutFlow />
+      </ReactFlowProvider>
     </>
   );
 }
