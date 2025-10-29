@@ -16,6 +16,7 @@ import {
 
 import "@xyflow/react/dist/style.css";
 import RotatingText from "./TextRotate";
+import { Search } from "lucide-react";
 // import { initialEdges, initialNodes } from "./InitialNodes";
 
 const elk = new ELK();
@@ -217,21 +218,31 @@ function LayoutFlow() {
     <section>
       <div
         id="header"
-        className="w-full border-b border-gray-200 bg-black flex py-5 justify-center items-center"
+        className="w-full border-b border-gray-200 bg-black flex items-center justify-between px-5"
       >
-        <h1 className="text-white text-3xl font-bold">JSON</h1>
-        <RotatingText
-          texts={["VIZUALIZER", "VISUALIZER"]}
-          mainClassName="px-2 sm:px-2 md:px-3 text-yellow-500 text-3xl font-bold overflow-hidden justify-center"
-          staggerFrom={"last"}
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "-120%" }}
-          staggerDuration={0.025}
-          splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
-          transition={{ type: "spring", damping: 30, stiffness: 400 }}
-          rotationInterval={3000}
+        <div className="flex items-center px-5 py-5">
+          <h1 className="text-white text-3xl font-bold">JSON</h1>
+          <RotatingText
+            texts={["VIZUALIZER", "VISUALIZER"]}
+            mainClassName="px-2 sm:px-2 md:px-3 text-yellow-500 text-3xl font-bold overflow-hidden justify-center"
+            staggerFrom={"last"}
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "-120%" }}
+            staggerDuration={0.025}
+            splitLevelClassName="overflow-hidden"
+            transition={{ type: "spring", damping: 30, stiffness: 400 }}
+            rotationInterval={3000}
+          />
+        </div>
+        <input
+          type="search"
+          placeholder="Search JSON"
+          className="w-1/4 bg-white border border-gray-200 rounded-full py-2 px-3 relative"
         />
+        <div className="absolute right-8" onClick={() => console.log("search")}>
+          <Search className="hover:text-gray-800 cursor-pointer" size={26} />
+        </div>
       </div>
       <div className="flex flex-col md:flex-row gap-5 bg-gray-50 h-screen">
         {/* Left panel */}
@@ -253,7 +264,7 @@ function LayoutFlow() {
               value={jsonInput}
               onChange={(e) => setJsonInput(e.target.value)}
               placeholder='{"id": "1", "name": "APIWIZ", "values": [1,2,3]}'
-              className="md:flex-1 p-3 border-2 border-gray-300 rounded font-mono text-sm md:resize-none focus:outline-none focus:border-blue-500 h-72"
+              className=" p-3 border border-black rounded font-mono text-sm md:resize-none focus:outline-none h-72"
             />
 
             {error && (
