@@ -13,6 +13,7 @@ import {
 } from "@xyflow/react";
 
 import "@xyflow/react/dist/style.css";
+import RotatingText from "./TextRotate";
 // import { initialEdges, initialNodes } from "./InitialNodes";
 
 const elk = new ELK();
@@ -209,64 +210,84 @@ function LayoutFlow() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-5 bg-gray-50 h-screen">
-      {/* Left panel */}
-      <div className="w-full md:w-1/2 border-r border-gray-200 bg-white flex flex-col">
-        <div className="flex-1 flex flex-col p-6 md:overflow-hidden">
-          <div className="flex justify-between items-center mb-2">
-            <label className="text-sm font-medium text-gray-700">
-              JSON Input
-            </label>
-            <button
-              onClick={loadSample}
-              className="text-xs px-3 py-3 bg-gray-100 rounded-full hover:bg-gray-200 font-medium cursor-pointer"
-            >
-              Load Sample JSON
-            </button>
-          </div>
-
-          <textarea
-            value={jsonInput}
-            onChange={(e) => setJsonInput(e.target.value)}
-            placeholder='{"id": "1", "name": "APIWIZ", "values": [1,2,3]}'
-            className="md:flex-1 p-3 border-2 border-gray-300 rounded font-mono text-sm md:resize-none focus:outline-none focus:border-blue-500 h-72"
-          />
-
-          {error && (
-            <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-              {error}
+    <section>
+      <div
+        id="header"
+        className="w-full border-b border-gray-200 bg-black flex py-5 justify-center items-center"
+      >
+        <h1 className="text-white text-3xl font-bold">JSON</h1>
+        <RotatingText
+          texts={["VIZUALIZER", "VISUALIZER"]}
+          mainClassName="px-2 sm:px-2 md:px-3 text-yellow-500 text-3xl font-bold overflow-hidden justify-center"
+          staggerFrom={"last"}
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "-120%" }}
+          staggerDuration={0.025}
+          splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
+          transition={{ type: "spring", damping: 30, stiffness: 400 }}
+          rotationInterval={3000}
+        />
+      </div>
+      <div className="flex flex-col md:flex-row gap-5 bg-gray-50 h-screen">
+        {/* Left panel */}
+        <div className="w-full md:w-1/2 border-r border-gray-200 bg-white flex flex-col">
+          <div className="flex-1 flex flex-col p-6 md:overflow-hidden">
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-sm font-medium text-gray-700">
+                JSON Input
+              </label>
+              <button
+                onClick={loadSample}
+                className="text-xs px-3 py-3 bg-gray-100 rounded-full hover:bg-gray-200 font-medium cursor-pointer"
+              >
+                Load Sample JSON
+              </button>
             </div>
-          )}
 
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={handleClear}
-              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-full w-full font-semibold cursor-pointer"
-            >
-              Clear
-            </button>
-            <button
-              onClick={handleGenerate}
-              className="w-full px-4 py-2 bg-black text-white rounded-full hover:bg-gray-800 font-semibold cursor-pointer"
-            >
-              Generate Tree
-            </button>
+            <textarea
+              value={jsonInput}
+              onChange={(e) => setJsonInput(e.target.value)}
+              placeholder='{"id": "1", "name": "APIWIZ", "values": [1,2,3]}'
+              className="md:flex-1 p-3 border-2 border-gray-300 rounded font-mono text-sm md:resize-none focus:outline-none focus:border-blue-500 h-72"
+            />
+
+            {error && (
+              <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={handleClear}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-full w-full font-semibold cursor-pointer"
+              >
+                Clear
+              </button>
+              <button
+                onClick={handleGenerate}
+                className="w-full px-4 py-2 bg-black text-white rounded-full hover:bg-gray-800 font-semibold cursor-pointer"
+              >
+                Generate Tree
+              </button>
+            </div>
           </div>
         </div>
+        <div className="w-full h-full">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onConnect={onConnect}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            fitView
+          >
+            <Background />
+          </ReactFlow>
+        </div>
       </div>
-      <div className="w-full h-full">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onConnect={onConnect}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          fitView
-        >
-          <Background />
-        </ReactFlow>
-      </div>
-    </div>
+    </section>
   );
 }
 
