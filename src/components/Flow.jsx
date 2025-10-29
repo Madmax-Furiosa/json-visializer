@@ -1,11 +1,194 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState } from "react";
+import ELK from "elkjs/lib/elk.bundled.js";
+import React, { useCallback, useState } from "react";
+import {
+  Background,
+  ReactFlow,
+  ReactFlowProvider,
+  addEdge,
+  Panel,
+  useNodesState,
+  useEdgesState,
+  useReactFlow,
+} from "@xyflow/react";
+
+import "@xyflow/react/dist/style.css";
+// import { initialEdges, initialNodes } from "./InitialNodes";
+
+const elk = new ELK();
+const elkOptions = {
+  "elk.algorithm": "layered",
+  "elk.layered.spacing.nodeNodeBetweenLayers": "100",
+  "elk.spacing.nodeNode": "80",
+};
+
+const getLayoutedElements = (nodes, edges, options = {}) => {
+  const isHorizontal = options?.["elk.direction"] === "RIGHT";
+  const graph = {
+    id: "root",
+    layoutOptions: options,
+    children: nodes.map((node) => ({
+      ...node,
+      targetPosition: isHorizontal ? "left" : "top",
+      sourcePosition: isHorizontal ? "right" : "bottom",
+      width: 150,
+      height: 50,
+    })),
+    edges: edges,
+  };
+
+  return elk
+    .layout(graph)
+    .then((layoutedGraph) => ({
+      nodes: layoutedGraph.children.map((node) => ({
+        ...node,
+        position: { x: node.x, y: node.y },
+      })),
+
+      edges: layoutedGraph.edges,
+    }))
+    .catch(console.error);
+};
+
+let nodeId = 0;
+
+const generateNodesAndEdges = (data, parentId = null, label = "data") => {
+  const nodes = [];
+  const edges = [];
+
+  const createNode = (label, value) => {
+    const id = `${++nodeId}`;
+    nodes.push({
+      id,
+      data: { label: String(label) },
+      position: { x: 0, y: 0 },
+      style: {
+        background: "#8ED1FC",
+        borderRadius: 8,
+        padding: 10,
+        color: "#fff",
+        border: "1px solid #3B82F6",
+        fontWeight: 500,
+      },
+    });
+
+    if (parentId) {
+      edges.push({
+        id: `e${parentId}-${id}`,
+        source: parentId,
+        target: id,
+        animated: true,
+        type: "smoothstep",
+      });
+    }
+
+    if (typeof value === "object" && value !== null) {
+      if (Array.isArray(value)) {
+        value.forEach((v, idx) => {
+          const child = generateNodesAndEdges(v, id, `${idx}`);
+          nodes.push(...child.nodes);
+          edges.push(...child.edges);
+        });
+      } else {
+        Object.entries(value).forEach(([k, v]) => {
+          const child = generateNodesAndEdges(v, id, k);
+          nodes.push(...child.nodes);
+          edges.push(...child.edges);
+        });
+      }
+    } else {
+      // leaf node
+      const valId = `${++nodeId}`;
+      nodes.push({
+        id: valId,
+        data: { label: String(value) },
+        position: { x: 0, y: 0 },
+        style: {
+          background: "#FFB86C",
+          borderRadius: 8,
+          padding: 8,
+          color: "#000",
+        },
+      });
+      edges.push({
+        id: `e${id}-${valId}`,
+        source: id,
+        target: valId,
+        type: "smoothstep",
+      });
+    }
+
+    return { nodes, edges };
+  };
+
+  return createNode(label, data);
+};
 
 function LayoutFlow() {
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  const { fitView } = useReactFlow();
   const [jsonInput, setJsonInput] = useState("");
   const [error, setError] = useState("");
+
+  const onConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    []
+  );
+
+  const handleGenerate = async () => {
+    setError("");
+
+    if (!jsonInput.trim()) {
+      setError("Please enter JSON data");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(jsonInput);
+      const { nodes: newNodes, edges: newEdges } =
+        generateNodesAndEdges(parsed);
+
+      // Apply ELK layout before rendering
+      const { nodes: layoutedNodes, edges: layoutedEdges } =
+        await getLayoutedElements(newNodes, newEdges, {
+          "elk.direction": "DOWN",
+          ...elkOptions,
+        });
+
+      setNodes(layoutedNodes);
+      setEdges(layoutedEdges);
+      fitView();
+    } catch (e) {
+      setError(`Invalid JSON: ${e.message}`);
+      setNodes([]);
+      setEdges([]);
+    }
+  };
+  //   const onLayout = useCallback(
+  //     ({ direction }) => {
+  //       const opts = { "elk.direction": direction, ...elkOptions };
+  //       getLayoutedElements(nodes, edges, opts).then(
+  //         ({ nodes: layoutedNodes, edges: layoutedEdges }) => {
+  //           setNodes(layoutedNodes);
+  //           setEdges(layoutedEdges);
+  //           fitView();
+  //         }
+  //       );
+  //     },
+  //     [nodes, edges]
+  //   );
+
+  //   useLayoutEffect(() => {
+  //     onLayout({ direction: "DOWN", useInitialNodes: true });
+  //   }, [onLayout]);
+
   const handleClear = () => {
     setJsonInput("");
+    setNodes([]);
+    setEdges([]);
+    setError("");
   };
 
   const sampleJson = {
@@ -18,7 +201,6 @@ function LayoutFlow() {
       zipcode: "560001",
     },
     hobbies: ["reading", "gaming", "hiking"],
-    metadata: null,
   };
 
   const loadSample = () => {
@@ -27,34 +209,27 @@ function LayoutFlow() {
   };
 
   return (
-    <div className="flex gap-5 bg-gray-50 h-screen">
+    <div className="flex flex-col md:flex-row gap-5 bg-gray-50 h-screen">
       {/* Left panel */}
-      <div className="w-full border-r border-gray-200 bg-white flex flex-col">
-        <div className="p-6 border-b">
-          <h1 className="text-2xl font-bold text-gray-800 mb-1">
-            JSON Tree Visualizer
-          </h1>
-          <p className="text-sm text-gray-500">Paste JSON and generate flow</p>
-        </div>
-
-        <div className="flex-1 flex flex-col p-6 overflow-hidden">
+      <div className="w-full md:w-1/2 border-r border-gray-200 bg-white flex flex-col">
+        <div className="flex-1 flex flex-col p-6 md:overflow-hidden">
           <div className="flex justify-between items-center mb-2">
             <label className="text-sm font-medium text-gray-700">
               JSON Input
             </label>
             <button
               onClick={loadSample}
-              className="text-xs px-3 py-1 bg-gray-100 rounded hover:bg-gray-200"
+              className="text-xs px-3 py-3 bg-gray-100 rounded-full hover:bg-gray-200 font-medium cursor-pointer"
             >
-              Load Sample
+              Load Sample JSON
             </button>
           </div>
 
           <textarea
             value={jsonInput}
             onChange={(e) => setJsonInput(e.target.value)}
-            placeholder='{"name": "example", "values": [1,2,3]}'
-            className="flex-1 p-3 border-2 border-gray-300 rounded font-mono text-sm resize-none focus:outline-none focus:border-blue-500"
+            placeholder='{"id": "1", "name": "APIWIZ", "values": [1,2,3]}'
+            className="md:flex-1 p-3 border-2 border-gray-300 rounded font-mono text-sm md:resize-none focus:outline-none focus:border-blue-500 h-72"
           />
 
           {error && (
@@ -65,21 +240,31 @@ function LayoutFlow() {
 
           <div className="flex gap-3 mt-4">
             <button
-              onClick={() => {
-                console.log(jsonInput);
-              }}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Generate Tree
-            </button>
-            <button
               onClick={handleClear}
-              className="px-4 py-2 bg-gray-200 rounded"
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-full w-full font-semibold cursor-pointer"
             >
               Clear
             </button>
+            <button
+              onClick={handleGenerate}
+              className="w-full px-4 py-2 bg-black text-white rounded-full hover:bg-gray-800 font-semibold cursor-pointer"
+            >
+              Generate Tree
+            </button>
           </div>
         </div>
+      </div>
+      <div className="w-full h-full">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onConnect={onConnect}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          fitView
+        >
+          <Background />
+        </ReactFlow>
       </div>
     </div>
   );
