@@ -62,18 +62,37 @@ const generateNodesAndEdges = (data, parentId = null, label = "data") => {
 
   const createNode = (label, value) => {
     const id = `${++nodeId}`;
+
+    // Detect type for coloring
+    let background = "#8ED1FC";
+    let border = "#3B82F6";
+    let textColor = "#fff";
+
+    if (Array.isArray(value)) {
+      background = "#34D399";
+      border = "#059669";
+    } else if (typeof value !== "object" || value === null) {
+      background = "#FDBA74";
+      border = "#FB923C";
+      textColor = "#000";
+    } else {
+      background = "#A78BFA";
+      border = "#7C3AED";
+    }
+
     nodes.push({
       id,
       data: { label: String(label) },
       position: { x: 0, y: 0 },
       style: {
-        background: "#8ED1FC",
+        background,
         borderRadius: 8,
         padding: 10,
-        color: "#fff",
-        border: "1px solid #3B82F6",
+        color: textColor,
+        border: `2px solid ${border}`,
         fontWeight: 700,
         fontSize: "16px",
+        transition: "all 0.3s ease",
       },
     });
 
@@ -90,7 +109,7 @@ const generateNodesAndEdges = (data, parentId = null, label = "data") => {
     if (typeof value === "object" && value !== null) {
       if (Array.isArray(value)) {
         value.forEach((v, idx) => {
-          const child = generateNodesAndEdges(v, id, `${idx}`);
+          const child = generateNodesAndEdges(v, id, `[${idx}]`);
           nodes.push(...child.nodes);
           edges.push(...child.edges);
         });
@@ -102,19 +121,21 @@ const generateNodesAndEdges = (data, parentId = null, label = "data") => {
         });
       }
     } else {
-      // leaf node
+      // leaf node (primitive)
       const valId = `${++nodeId}`;
       nodes.push({
         id: valId,
         data: { label: String(value) },
         position: { x: 0, y: 0 },
         style: {
-          background: "#FFB86C",
+          background: "#FCD34D",
           borderRadius: 8,
           padding: 8,
           color: "#000",
+          border: "2px solid #F59E0B",
           fontWeight: 700,
           fontSize: "16px",
+          transition: "all 0.3s ease",
         },
       });
       edges.push({
