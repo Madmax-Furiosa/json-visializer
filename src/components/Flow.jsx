@@ -10,6 +10,8 @@ import {
   useNodesState,
   useEdgesState,
   useReactFlow,
+  MiniMap,
+  Controls,
 } from "@xyflow/react";
 
 import "@xyflow/react/dist/style.css";
@@ -69,7 +71,8 @@ const generateNodesAndEdges = (data, parentId = null, label = "data") => {
         padding: 10,
         color: "#fff",
         border: "1px solid #3B82F6",
-        fontWeight: 500,
+        fontWeight: 700,
+        fontSize: "16px",
       },
     });
 
@@ -109,6 +112,8 @@ const generateNodesAndEdges = (data, parentId = null, label = "data") => {
           borderRadius: 8,
           padding: 8,
           color: "#000",
+          fontWeight: 700,
+          fontSize: "16px",
         },
       });
       edges.push({
@@ -201,7 +206,6 @@ function LayoutFlow() {
       city: "Bengaluru",
       zipcode: "560001",
     },
-    hobbies: ["reading", "gaming", "hiking"],
   };
 
   const loadSample = () => {
@@ -283,7 +287,9 @@ function LayoutFlow() {
             onEdgesChange={onEdgesChange}
             fitView
           >
+            <MiniMap />
             <Background />
+            <Controls />
           </ReactFlow>
         </div>
       </div>
