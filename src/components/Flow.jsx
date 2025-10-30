@@ -5,9 +5,7 @@ import { toast, ToastContainer } from "react-toastify";
 import {
   Background,
   ReactFlow,
-  ReactFlowProvider,
   addEdge,
-  Panel,
   useNodesState,
   useEdgesState,
   useReactFlow,
@@ -17,7 +15,7 @@ import {
 
 import "@xyflow/react/dist/style.css";
 import RotatingText from "./TextRotate";
-import { Search, SendHorizontal } from "lucide-react";
+import { SendHorizontal } from "lucide-react";
 
 const elk = new ELK();
 const elkOptions = {
