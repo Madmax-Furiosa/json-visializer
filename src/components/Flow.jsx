@@ -159,7 +159,8 @@ function LayoutFlow() {
   const [jsonInput, setJsonInput] = useState("");
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  // const [message, setMessage] = useState("");
+
+  const notify = () => toast("No match found");
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
@@ -195,23 +196,6 @@ function LayoutFlow() {
       setEdges([]);
     }
   };
-  //   const onLayout = useCallback(
-  //     ({ direction }) => {
-  //       const opts = { "elk.direction": direction, ...elkOptions };
-  //       getLayoutedElements(nodes, edges, opts).then(
-  //         ({ nodes: layoutedNodes, edges: layoutedEdges }) => {
-  //           setNodes(layoutedNodes);
-  //           setEdges(layoutedEdges);
-  //           fitView();
-  //         }
-  //       );
-  //     },
-  //     [nodes, edges]
-  //   );
-
-  //   useLayoutEffect(() => {
-  //     onLayout({ direction: "DOWN", useInitialNodes: true });
-  //   }, [onLayout]);
 
   const handleClear = () => {
     setJsonInput("");
@@ -236,8 +220,6 @@ function LayoutFlow() {
     setError("");
   };
 
-  const notify = () => toast("No match found");
-
   const handleSearch = () => {
     if (!searchTerm) return;
 
@@ -247,6 +229,21 @@ function LayoutFlow() {
     );
 
     if (foundNode) {
+      // If the matched node is a key, try to highlight its primitive value child instead
+      const childEdges = edges.filter((e) => e.source === foundNode.id);
+      if (childEdges.length > 0) {
+        const childNodes = childEdges
+          .map((e) => nodes.find((n) => n.id === e.target))
+          .filter(Boolean);
+        // Value node heuristic: node with no outgoing edges (leaf)
+        const valueChild = childNodes.find(
+          (cn) => !edges.some((e) => e.source === cn.id)
+        );
+        if (valueChild) {
+          foundNode = valueChild;
+        }
+      }
+
       // Highlight node
       const updated = nodes.map((n) =>
         n.id === foundNode.id
@@ -254,15 +251,14 @@ function LayoutFlow() {
               ...n,
               style: {
                 ...n.style,
-                border: "3px solid #FFD700",
-                boxShadow: "0 0 10px #FFD700",
+                border: "3px solid #11cfe8",
+                boxShadow: "0 0 10px #11cfe8",
               },
             }
           : {
               ...n,
               style: {
                 ...n.style,
-                border: "1px solid #3B82F6",
                 boxShadow: "none",
               },
             }
@@ -270,7 +266,6 @@ function LayoutFlow() {
 
       setNodes(updated);
       setCenter(foundNode.position.x, foundNode.position.y, { zoom: 1.5 });
-      // setMessage("Match found!");
     } else {
       notify();
     }
@@ -280,7 +275,7 @@ function LayoutFlow() {
     <section>
       <div
         id="header"
-        className="w-full border-b border-gray-200 bg-black flex items-center justify-between px-5"
+        className="w-full border-b border-gray-200 bg-black flex flex-col md:flex-row items-center md:justify-between px-5"
       >
         <div className="flex items-center px-5 py-5">
           <h1 className="text-white text-3xl font-bold">JSON</h1>
@@ -297,7 +292,7 @@ function LayoutFlow() {
             rotationInterval={3000}
           />
         </div>
-        <div className="relative flex items-center gap-2">
+        <div className="relative flex items-center gap-2 pb-5 md:pb-0">
           <input
             type="text"
             placeholder="Search JSON path (e.g., user.address)"
@@ -363,7 +358,7 @@ function LayoutFlow() {
             </div>
           </div>
         </div>
-        <div className="w-full h-full">
+        <div className="w-full h-full min-h-0">
           <ReactFlow
             nodes={nodes}
             edges={edges}
